@@ -1,0 +1,109 @@
+= Operational instructions
+
+== General
+
+This file contains operational instructions to create infrastructure in AWS
+by terraform.
+
+== Create AWS account
+
+* Create an AWS account in us region. (e.g. `us-east-1`).
+
+* Get your AWS account id. (e.g. `123456789`)
+
+* Set up access key pair for the root user in IAM for the creation and
+  modification of the infrastructure.
+
+* Set up the the AWS access key pair in the file `~/.aws/credentials`.
+  Add the lines listed below into this file.
+
+```
+[example-root]
+aws_access_key_id = XXXXXXXXXXXXXXXXX
+aws_secret_access_key = XXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXXX
+```
+
+== Install tfenv and terraform
+
+* Follow the instruction in https://github.com/tfutils/tfenv to install tfenv.
+
+* Install terraform by tfenv. (e.g. `tfenv install 0.12.29`)
+
+NOTE: You can install higher version of terraform, however you may need to
+      upgrade the syntax accordingly.
+
+== Create site
+
+* Go to site folder to perform changes.  (e.g. `sites/www.example.org`)
+
+* Edit the `variables.tf`.  Update the account id.
+
+```
+variable "allowed_account_ids" {
+  type    = list(string)
+  default = ["<account-id>"]
+}
+```
+
+* Edit the `variables.tf`.  Update the domain name.
+
+```
+variable "fqdn-root" {
+  default = "example.org"
+}
+
+variable "fqdn-main" {
+  default = "www.example.org"
+}
+
+variable "fqdn-test" {
+  default = "www-staging.example.org"
+}
+```
+
+* Edit the `site-main.tf` and `site-test.tf`.  Change the value of `MYSECRET1234567` as shown below.
+
+```
+refer_secret = base64sha512("MYSECRET1234567${var.fqdn-main}")
+```
+
+* Under the site folder, perform the following tasks:
+
+** Run `export AWS_PROFILE=example-root` to setup AWS user.
+
+** Run `terraform init`.
+
+** Run `terraform plan` to review the planned changes.
+
+** Run `terraform apply` to apply changes.
+
+== Create DNS records
+
+* Go to routes53 folder of the site.  (e.g.  `route53/example.org`)
+
+* Edit the `provider.tf`.  Update the account id.
+
+```
+provider "aws" {
+  region              = var.region
+  allowed_account_ids = ["<account-id>"]
+}
+```
+
+* Edit the `variables.tf`.  Update the domain name.
+
+```
+variable "external_domain" {
+  default = "example.org"
+}
+```
+
+* Under the routes53 folder, perform the following tasks:
+
+** Run `export AWS_PROFILE=example-root` to setup AWS user.
+
+** Run `terraform init`.
+
+** Run `terraform plan` to review the planned changes.
+
+** Run `terraform apply` to apply changes.
